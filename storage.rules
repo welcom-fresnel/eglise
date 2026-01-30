@@ -1,0 +1,45 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ===== HELPER FUNCTIONS =====
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ===== PROFILE PICTURES =====
+    match /profile_pictures/{userId}/{fileName} {
+      // Lecture: Tous les utilisateurs authentifiés
+      allow read: if isAuthenticated();
+      
+      // Écriture: Seulement le propriétaire
+      allow write: if isAuthenticated() && 
+                      isOwner(userId) &&
+                      request.resource.size < 10 * 1024 * 1024 && // 10 MB max
+                      request.resource.contentType.matches('image/.*');
+      
+      // Suppression: Seulement le propriétaire
+      allow delete: if isOwner(userId);
+    }
+    
+    // ===== POST IMAGES =====
+    match /post_images/{userId}/{postId}/{fileName} {
+      // Lecture: Tous les utilisateurs authentifiés
+      allow read: if isAuthenticated();
+      
+      // Écriture: Seulement l'auteur du post
+      allow write: if isAuthenticated() && 
+                      isOwner(userId) &&
+                      request.resource.size < 10 * 1024 * 1024 && // 10 MB max
+                      request.resource.contentType.matches('image/.*');
+      
+      // Suppression: Seulement l'auteur du post
+      allow delete: if isOwner(userId);
+    }
+  }
+}
+

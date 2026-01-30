@@ -1,0 +1,171 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== HELPER FUNCTIONS =====
+    
+    // Vérifie si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Vérifie si l'utilisateur est le propriétaire du document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Vérifie si l'utilisateur est modérateur ou admin
+    function isModerator() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['moderator', 'admin'];
+    }
+    
+    // Vérifie si l'utilisateur est admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Vérifie si l'utilisateur n'est pas bloqué
+    function isNotBlocked() {
+      return isAuthenticated() && 
+             !(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBlocked);
+    }
+    
+    // Vérifie si l'utilisateur n'a pas bloqué l'autre utilisateur
+    function hasNotBlockedUser(userId) {
+      return isAuthenticated() && 
+             !(userId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.blockedUsers);
+    }
+    
+    // ===== COLLECTION: users =====
+    match /users/{userId} {
+      // Lecture: Tous les utilisateurs authentifiés peuvent lire les profils publics
+      allow read: if isAuthenticated() && isNotBlocked();
+      
+      // Création: Seulement lors de l'inscription (via Cloud Function recommandé)
+      allow create: if isAuthenticated() && isOwner(userId);
+      
+      // Mise à jour: Seulement le propriétaire ou un admin
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Suppression: Seulement les admins
+      allow delete: if isAdmin();
+    }
+    
+    // ===== COLLECTION: posts =====
+    match /posts/{postId} {
+      // Lecture: Utilisateurs authentifiés, non bloqués, et qui n'ont pas bloqué l'auteur
+      allow read: if isAuthenticated() && 
+                     isNotBlocked() && 
+                     hasNotBlockedUser(resource.data.authorId) &&
+                     !resource.data.isModerated;
+      
+      // Création: Utilisateurs authentifiés et non bloqués
+      allow create: if isAuthenticated() && 
+                       isNotBlocked() &&
+                       request.resource.data.authorId == request.auth.uid &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Mise à jour: Seulement l'auteur (pour likes) ou modérateur/admin (pour modération)
+      allow update: if (isOwner(resource.data.authorId) && 
+                           request.resource.data.diff(resource.data).affectedKeys()
+                               .hasOnly(['likesCount', 'likedBy', 'updatedAt'])) ||
+                     (isModerator() && 
+                           request.resource.data.diff(resource.data).affectedKeys()
+                               .hasOnly(['isModerated', 'isReported', 'updatedAt']));
+      
+      // Suppression: Seulement l'auteur ou un modérateur/admin
+      allow delete: if isOwner(resource.data.authorId) || isModerator();
+    }
+    
+    // ===== COLLECTION: comments =====
+    match /comments/{commentId} {
+      // Lecture: Utilisateurs authentifiés, non bloqués
+      allow read: if isAuthenticated() && 
+                     isNotBlocked() &&
+                     !resource.data.isModerated;
+      
+      // Création: Utilisateurs authentifiés et non bloqués
+      allow create: if isAuthenticated() && 
+                       isNotBlocked() &&
+                       request.resource.data.authorId == request.auth.uid &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Mise à jour: Seulement l'auteur (pour likes) ou modérateur/admin
+      allow update: if (isOwner(resource.data.authorId) && 
+                           request.resource.data.diff(resource.data).affectedKeys()
+                               .hasOnly(['likesCount', 'likedBy', 'updatedAt'])) ||
+                     (isModerator() && 
+                           request.resource.data.diff(resource.data).affectedKeys()
+                               .hasOnly(['isModerated', 'isReported', 'updatedAt']));
+      
+      // Suppression: Seulement l'auteur ou un modérateur/admin
+      allow delete: if isOwner(resource.data.authorId) || isModerator();
+    }
+    
+    // ===== COLLECTION: groups =====
+    match /groups/{groupId} {
+      // Lecture: Groupes publics ou membres du groupe
+      allow read: if isAuthenticated() && 
+                     isNotBlocked() &&
+                     (!resource.data.isPrivate || 
+                      request.auth.uid in resource.data.members);
+      
+      // Création: Utilisateurs authentifiés et non bloqués
+      allow create: if isAuthenticated() && 
+                       isNotBlocked() &&
+                       request.resource.data.creatorId == request.auth.uid &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Mise à jour: Créateur, modérateurs du groupe, ou admin
+      allow update: if isAuthenticated() && 
+                       isNotBlocked() &&
+                       (request.auth.uid == resource.data.creatorId ||
+                        request.auth.uid in resource.data.moderators ||
+                        isAdmin());
+      
+      // Suppression: Seulement le créateur ou un admin
+      allow delete: if request.auth.uid == resource.data.creatorId || isAdmin();
+    }
+    
+    // ===== COLLECTION: reports =====
+    match /reports/{reportId} {
+      // Lecture: Seulement les modérateurs et admins
+      allow read: if isModerator();
+      
+      // Création: Utilisateurs authentifiés peuvent signaler
+      allow create: if isAuthenticated() && 
+                       isNotBlocked() &&
+                       request.resource.data.reportedBy == request.auth.uid;
+      
+      // Mise à jour: Seulement les modérateurs et admins
+      allow update: if isModerator();
+      
+      // Suppression: Seulement les admins
+      allow delete: if isAdmin();
+    }
+    
+    // ===== COLLECTION: notifications =====
+    match /notifications/{notificationId} {
+      // Lecture: Seulement le propriétaire de la notification
+      allow read: if isAuthenticated() && 
+                     request.auth.uid == resource.data.userId;
+      
+      // Création: Via Cloud Functions uniquement (recommandé)
+      allow create: if false; // Désactivé côté client, utilisez Cloud Functions
+      
+      // Mise à jour: Seulement le propriétaire (pour marquer comme lu)
+      allow update: if isOwner(resource.data.userId) &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['isRead', 'readAt']);
+      
+      // Suppression: Seulement le propriétaire
+      allow delete: if isOwner(resource.data.userId);
+    }
+  }
+}
+

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "82092576667",
+    "project_id": "reseau-social-chretien",
+    "storage_bucket": "reseau-social-chretien.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82092576667:android:6927fb1c84bb34d7f0db3e",
+        "android_client_info": {
+          "package_name": "com.example.eglise"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyxZdJLz9tOs0nchfcigZfFS7fndFtcOI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
