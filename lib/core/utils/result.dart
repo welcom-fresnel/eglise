@@ -1,7 +1,7 @@
-import 'failures.dart';
+import '../errors/failures.dart';
 
 /// Type Result pour gérer les erreurs de manière fonctionnelle
-/// 
+///
 /// Similaire à Either en programmation fonctionnelle.
 /// Left = erreur (Failure), Right = succès (T)
 sealed class Result<T> {
@@ -24,22 +24,22 @@ class Error<T> extends Result<T> {
 extension ResultExtensions<T> on Result<T> {
   /// Retourne true si c'est un succès
   bool get isSuccess => this is Success<T>;
-  
+
   /// Retourne true si c'est une erreur
   bool get isError => this is Error<T>;
-  
+
   /// Récupère la valeur si succès, null sinon
   T? get valueOrNull => switch (this) {
     Success(value: final v) => v,
     Error() => null,
   };
-  
+
   /// Récupère le failure si erreur, null sinon
   Failure? get failureOrNull => switch (this) {
     Success() => null,
     Error(failure: final f) => f,
   };
-  
+
   /// Pattern matching pour gérer les deux cas (succès/erreur)
   R when<R>({
     required R Function(T) success,
@@ -51,4 +51,3 @@ extension ResultExtensions<T> on Result<T> {
     };
   }
 }
-

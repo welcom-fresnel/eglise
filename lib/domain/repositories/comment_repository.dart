@@ -1,5 +1,4 @@
 import '../entities/comment.dart';
-import '../../core/errors/failures.dart';
 import '../../core/utils/result.dart';
 
 /// Repository de commentaires

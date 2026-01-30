@@ -72,7 +72,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    final authNotifier = ref.read(authNotifierProvider.notifier);
+                    final authNotifier = ref.read(authNotifierProvider);
                     await authNotifier.signOut();
                     if (context.mounted) {
                       Navigator.pushReplacementNamed(context, '/login');

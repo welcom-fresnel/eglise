@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/repositories/comment_repository.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/errors/failures.dart';
 import '../../core/utils/result.dart';
 import '../datasources/firestore_datasource.dart';
 import '../models/comment_model.dart';

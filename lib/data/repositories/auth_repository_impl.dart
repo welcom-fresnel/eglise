@@ -1,4 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase;
+
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/constants/app_constants.dart';
@@ -101,7 +102,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   /// Récupère l'utilisateur depuis Firestore à partir d'un FirebaseUser
-  Future<User> _getUserFromFirebaseUser(FirebaseUser firebaseUser) async {
+  Future<User> _getUserFromFirebaseUser(firebase.User firebaseUser) async {
     final result = await _firestoreDataSource.getDocument(
       collection: AppConstants.usersCollection,
       documentId: firebaseUser.uid,

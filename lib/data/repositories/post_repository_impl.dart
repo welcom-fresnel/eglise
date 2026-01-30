@@ -2,8 +2,8 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/post_repository.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/errors/failures.dart';
 import '../../core/utils/result.dart';
-import '../../core/utils/logger.dart';
 import '../datasources/firestore_datasource.dart';
 import '../models/post_model.dart';
 

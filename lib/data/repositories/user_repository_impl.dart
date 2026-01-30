@@ -1,6 +1,7 @@
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/errors/failures.dart';
 import '../../core/utils/result.dart';
 import '../datasources/firestore_datasource.dart';
 import '../datasources/cloudinary_datasource.dart';

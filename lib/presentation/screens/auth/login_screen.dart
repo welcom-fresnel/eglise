@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../../core/utils/result.dart';
 import '../../providers/auth_provider.dart';
 
@@ -30,7 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final authNotifier = ref.read(authNotifierProvider);
     final result = await authNotifier.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -162,7 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const Text('Pas encore de compte ? '),
                       TextButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/register');
+                          context.pushNamed('register');
                         },
                         child: const Text('S\'inscrire'),
                       ),

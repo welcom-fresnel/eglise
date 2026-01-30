@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/home/feed_screen.dart';
@@ -13,22 +14,32 @@ class AppRouter {
   static final router = GoRouter(
     initialLocation: '/login',
     redirect: (context, state) {
-      // Vérifier l'état d'authentification
-      final container = ProviderScope.containerOf(context);
-      final authState = container.read(authStateProvider);
-      
-      final isLoggedIn = authState.valueOrNull != null;
-      final isGoingToAuth = state.matchedLocation == '/login' || 
-                           state.matchedLocation == '/register';
-
-      // Rediriger vers login si non connecté et pas déjà sur une page d'auth
-      if (!isLoggedIn && !isGoingToAuth) {
-        return '/login';
+      // Sur le web, pas de redirection d'authentification
+      if (kIsWeb) {
+        return null;
       }
 
-      // Rediriger vers le feed si connecté et sur une page d'auth
-      if (isLoggedIn && isGoingToAuth) {
-        return '/feed';
+      try {
+        // Vérifier l'état d'authentification
+        final container = ProviderScope.containerOf(context);
+        final authState = container.read(authStateProvider);
+        
+        final isLoggedIn = authState.whenData((user) => user != null).value ?? false;
+        final isGoingToAuth = state.matchedLocation == '/login' || 
+                             state.matchedLocation == '/register';
+
+        // Rediriger vers login si non connecté et pas déjà sur une page d'auth
+        if (!isLoggedIn && !isGoingToAuth) {
+          return '/login';
+        }
+
+        // Rediriger vers le feed si connecté et sur une page d'auth
+        if (isLoggedIn && isGoingToAuth) {
+          return '/feed';
+        }
+      } catch (e) {
+        // En cas d'erreur, laisser passer
+        return null;
       }
 
       return null; // Pas de redirection

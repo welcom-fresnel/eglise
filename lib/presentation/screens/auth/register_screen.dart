@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../../core/utils/result.dart';
 import '../../providers/auth_provider.dart';
 
@@ -35,7 +37,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final authNotifier = ref.read(authNotifierProvider);
     final result = await authNotifier.signUp(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -207,7 +209,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const Text('Déjà un compte ? '),
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          context.pop();
                         },
                         child: const Text('Se connecter'),
                       ),
